@@ -95,12 +95,13 @@ public class CharacterMotor3D : MonoBehaviour, IMovementState
         direction.y = 0f;
 
         moveDirection = direction.sqrMagnitude > 0.01f ? direction.normalized : Vector3.zero;
-        CurrentMoveSpeed01 = input.IsSprinting ? 1f : 0.5f;
+        float rawSpeed = input.IsSprinting ? 1f : 0.5f;
+        CurrentMoveSpeed01 = Mathf.Lerp(CurrentMoveSpeed01, rawSpeed * inputMagnitude, Time.deltaTime * 10f);
     }
 
     private void UpdateBodyRotation(Vector2 moveInput)
     {
-        if (moveDirection.sqrMagnitude < 0.01f || moveInput.y < 0f) return;
+        if (moveDirection.sqrMagnitude < 0.01f) return;
 
         Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
@@ -130,6 +131,7 @@ public class CharacterMotor3D : MonoBehaviour, IMovementState
     private void ApplyExtraGravity()
     {
         if (IsGrounded) return;
+        if (rb.linearVelocity.y > 0f) return; // ← 상승 중엔 스킵
         rb.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
     }
 }
